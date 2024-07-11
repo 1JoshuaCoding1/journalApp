@@ -1,59 +1,82 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
+import 'package:journal_app/screens/settings_screen.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
-
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  // Sample journal entries (replace with your data source)
-  final List<String> entries = [
-    'Mic test',
-    'Entry 2 - Apoador Sunset',
-    'Another journal entry',
-    'This is a longer entry with more content',
-  ];
-
+class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    User? user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Entries'),
+        title: Text(user != null ? 'My Entries (${user.displayName})' : 'My Entries'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications),
+            icon: const Icon(Icons.settings),
             onPressed: () {
-              // Handle notification icon tap
+              showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                builder: (context) {
+                  return FractionallySizedBox(
+                    heightFactor: 0.5,
+                    child: SettingsScreen(),
+                  );
+                },
+              );
             },
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: CircleAvatar(
-              backgroundImage: NetworkImage(
-                'https://picsum.photos/id/2379/200/300', // Replace with your profile image URL
-              ),
-            ),
           ),
         ],
       ),
-      body: ListView.builder(
-        itemCount: entries.length,
-        itemBuilder: (context, index) {
-          return JournalEntryCard(title: entries[index]);
+      body: StreamBuilder(
+        stream: FirebaseFirestore.instance
+            .collection('entries')
+            .where('userId', isEqualTo: user?.uid)
+            .snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          List<DocumentSnapshot> entries = snapshot.data!.docs;
+
+          return ListView.builder(
+            itemCount: entries.length,
+            itemBuilder: (context, index) {
+              return JournalEntryCard(
+                title: entries[index]['title'],
+                content: entries[index]['content'],
+                documentId: entries[index].id,
+              );
+            },
+          );
         },
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
+          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Maps'),
           BottomNavigationBarItem(icon: Icon(Icons.add), label: 'New Entry'),
         ],
-        currentIndex: 0, // Set the initial selected index
+        currentIndex: 0,
         selectedItemColor: Colors.blue,
         onTap: (int index) {
-          // Handle bottom navigation bar item tap
+          switch (index) {
+            case 0:
+              break;
+            case 1:
+              context.push('/maps');
+              break;
+            case 2:
+              context.push('/new-entry');
+              break;
+          }
         },
       ),
     );
@@ -62,17 +85,41 @@ class _HomePageState extends State<HomePage> {
 
 class JournalEntryCard extends StatelessWidget {
   final String title;
+  final String content;
+  final String documentId;
 
-  const JournalEntryCard({super.key, required this.title});
+  const JournalEntryCard({
+    Key? key,
+    required this.title,
+    required this.content,
+    required this.documentId,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Text(
-          title,
-          style: const TextStyle(fontSize: 16.0),
+    return GestureDetector(
+      onTap: () {
+        context.push('/entry/$documentId');
+      },
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8.0),
+              Text(
+                content,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 14.0),
+              ),
+            ],
+          ),
         ),
       ),
     );
