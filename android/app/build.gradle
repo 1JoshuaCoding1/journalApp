@@ -23,6 +23,13 @@ if (flutterVersionName == null) {
     flutterVersionName = "1.0"
 }
 
+
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "com.example.journal_app"
     compileSdk = flutter.compileSdkVersion
@@ -40,6 +47,8 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutterVersionCode.toInteger()
         versionName = flutterVersionName
+        resValue "string", "google_maps_api_key", localProperties.getProperty("google_maps_api_key", "")
+
     }
 
     buildTypes {

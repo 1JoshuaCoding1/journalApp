@@ -1,11 +1,12 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:journal_app/location_picker_widget.dart';
 
 class EntryScreen extends StatefulWidget {
   const EntryScreen({Key? key}) : super(key: key);
@@ -17,12 +18,12 @@ class EntryScreen extends StatefulWidget {
 class _EntryScreenState extends State<EntryScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
+  LatLng? _selectedLocation;
   XFile? _imageFile;
 
   Future<void> _pickImage() async {
     final imagePicker = ImagePicker();
-    final XFile? pickedImage =
-        await imagePicker.pickImage(source: ImageSource.gallery);
+    final XFile? pickedImage = await imagePicker.pickImage(source: ImageSource.gallery);
     setState(() {
       _imageFile = pickedImage;
     });
@@ -34,6 +35,20 @@ class _EntryScreenState extends State<EntryScreen> {
     });
   }
 
+  void _selectLocation() async {
+    LatLng? selectedLocation = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LocationPickerScreen(),
+      ),
+    );
+    if (selectedLocation != null) {
+      setState(() {
+        _selectedLocation = selectedLocation;
+      });
+    }
+  }
+
   Future<void> _saveEntry() async {
     String? uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
@@ -41,8 +56,7 @@ class _EntryScreenState extends State<EntryScreen> {
         String? imageURL;
         if (_imageFile != null) {
           File file = File(_imageFile!.path);
-          String fileName =
-              '${DateTime.now().millisecondsSinceEpoch}.png';
+          String fileName = '${DateTime.now().millisecondsSinceEpoch}.png';
           Reference storageRef = FirebaseStorage.instance
               .ref()
               .child('entry_images/$uid/$fileName');
@@ -58,18 +72,20 @@ class _EntryScreenState extends State<EntryScreen> {
           'userId': uid,
           'title': _titleController.text,
           'content': _contentController.text,
+          'location': _selectedLocation != null
+              ? GeoPoint(_selectedLocation!.latitude, _selectedLocation!.longitude)
+              : null,
           'timestamp': Timestamp.now(),
           'imageURL': imageURL,
         };
 
-        await FirebaseFirestore.instance
-            .collection('entries')
-            .add(entryData);
+        await FirebaseFirestore.instance.collection('entries').add(entryData);
 
         _titleController.clear();
         _contentController.clear();
         setState(() {
           _imageFile = null;
+          _selectedLocation = null;
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -85,25 +101,6 @@ class _EntryScreenState extends State<EntryScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('User not authenticated')),
       );
-    }
-  }
-
-  void _onItemTapped(int index) {
-    switch (index) {
-      case 0:
-        if (FirebaseAuth.instance.currentUser != null) {
-          context.go('/');
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('User not authenticated')),
-          );
-        }
-        break;
-      case 1:
-        context.go('/maps'); 
-        break;
-      case 2:
-        break;
     }
   }
 
@@ -138,7 +135,8 @@ class _EntryScreenState extends State<EntryScreen> {
                       controller: _titleController,
                       decoration: InputDecoration(
                         hintText: 'Title',
-                        contentPadding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 20.0),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 16.0, horizontal: 20.0),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10.0),
                         ),
@@ -152,7 +150,8 @@ class _EntryScreenState extends State<EntryScreen> {
                       maxLines: null,
                       decoration: InputDecoration(
                         hintText: 'Content',
-                        contentPadding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 20.0),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 16.0, horizontal: 20.0),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10.0),
                         ),
@@ -160,6 +159,12 @@ class _EntryScreenState extends State<EntryScreen> {
                         fillColor: Colors.grey[200],
                       ),
                     ),
+                    const SizedBox(height: 10.0),
+                    if (_selectedLocation != null)
+                      Text(
+                        'Selected Location: ${_selectedLocation!.latitude}, ${_selectedLocation!.longitude}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     const SizedBox(height: 10.0),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -169,43 +174,52 @@ class _EntryScreenState extends State<EntryScreen> {
                           icon: const Icon(Icons.image),
                           label: const Text('Add Image'),
                         ),
-                        if (_imageFile != null) ...[
-                          Expanded(
+                        IconButton(
+                          onPressed: _selectLocation,
+                          icon: const Icon(Icons.place),
+                          tooltip: 'Select Location',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10.0),
+                    if (_imageFile != null)
+                      Column(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8.0),
                             child: Image.file(
                               File(_imageFile!.path),
-                              width: 100.0,
-                              height: 100.0,
+                              width: double.infinity,
+                              height: 200.0,
                               fit: BoxFit.cover,
                             ),
                           ),
-                          SizedBox(width: 10.0),
-                          SizedBox(
-                            width: 100.0,
-                            child: ElevatedButton(
-                              onPressed: _removeImage,
-                              style: ElevatedButton.styleFrom(
-                                padding: EdgeInsets.zero,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8.0),
-                                ),
-                                textStyle: TextStyle(fontSize: 12.0),
+                          const SizedBox(height: 10.0),
+                          ElevatedButton(
+                            onPressed: _removeImage,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 20.0),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.0),
                               ),
-                              child: const Text('Remove Image'),
                             ),
+                            child: const Text('Remove Image', style: TextStyle(color: Colors.black)),
                           ),
                         ],
-                      ],
-                    ),
+                      ),
                     const SizedBox(height: 20.0),
                     ElevatedButton(
                       onPressed: _saveEntry,
                       style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 20.0),
+                        padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 20.0), backgroundColor: Colors.blueAccent,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10.0),
                         ),
                       ),
-                      child: const Text('Save Entry'),
+                      child: const Text('Save Entry',style: TextStyle(color: Colors.white),
+),
+                      
                     ),
                   ],
                 ),
@@ -225,5 +239,19 @@ class _EntryScreenState extends State<EntryScreen> {
         onTap: _onItemTapped,
       ),
     );
+  }
+
+  void _onItemTapped(int index) {
+    switch (index) {
+      case 0:
+        context.push('/');
+        break;
+      case 1:
+        context.push('/maps');
+        break;
+      case 2:
+        context.push('/new-entry');
+        break;
+    }
   }
 }

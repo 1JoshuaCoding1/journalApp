@@ -28,12 +28,7 @@ class SettingsScreen extends StatelessWidget {
             onTap: () {
             },
           ),
-          ListTile(
-            leading: Icon(Icons.notifications),
-            title: Text('Notifications'),
-            onTap: () {
-            },
-          ),
+         
           ListTile(
             leading: Icon(Icons.logout),
             title: Text('Logout'),

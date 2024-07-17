@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-// Import your screen widgets
 import '/screens/login.dart';
 import 'package:journal_app/screens/homescreen.dart';
 import 'package:journal_app/screens/register.dart';
 import 'package:journal_app/screens/entryscreen.dart';
 import 'package:journal_app/screens/entry_detail_screen.dart';
+import 'package:journal_app/screens/maps.dart';
 
 class AppRouter {
   static final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -44,6 +44,12 @@ class AppRouter {
         path: '/new-entry',
         builder: (context, state) => EntryScreen(),
       ),
+      GoRoute(
+      path: '/maps',
+      builder: (BuildContext context, GoRouterState state) {
+        return const MapsScreen();
+      },
+    ),
       GoRoute(
         path: '/entry/:id',
         builder: (context, state) {

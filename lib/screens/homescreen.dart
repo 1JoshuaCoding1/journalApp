@@ -11,7 +11,7 @@ class HomePage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(user != null ? 'My Entries (${user.displayName})' : 'My Entries'),
+        title: Text(user != null ? 'Journal Entries (${user.displayName})' : 'Journal Entries'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -19,6 +19,9 @@ class HomePage extends StatelessWidget {
               showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
+                ),
                 builder: (context) {
                   return FractionallySizedBox(
                     heightFactor: 0.5,
@@ -41,7 +44,7 @@ class HomePage extends StatelessWidget {
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           List<DocumentSnapshot> entries = snapshot.data!.docs;
@@ -65,7 +68,7 @@ class HomePage extends StatelessWidget {
           BottomNavigationBarItem(icon: Icon(Icons.add), label: 'New Entry'),
         ],
         currentIndex: 0,
-        selectedItemColor: Colors.blue,
+        selectedItemColor: Colors.blueAccent,
         onTap: (int index) {
           switch (index) {
             case 0:
@@ -89,11 +92,11 @@ class JournalEntryCard extends StatelessWidget {
   final String documentId;
 
   const JournalEntryCard({
-    Key? key,
+    super.key,
     required this.title,
     required this.content,
     required this.documentId,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -102,6 +105,11 @@ class JournalEntryCard extends StatelessWidget {
         context.push('/entry/$documentId');
       },
       child: Card(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        elevation: 3.0,
+        margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -109,14 +117,14 @@ class JournalEntryCard extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 18.0, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8.0),
               Text(
                 content,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 14.0),
+                style: const TextStyle(fontSize: 14.0, color: Colors.grey),
               ),
             ],
           ),

@@ -28,7 +28,6 @@ class _LoginPageState extends State<LoginPage> {
             duration: Duration(seconds: 2),
           ),
         );
-        // Navigate to the home screen after successful login
         context.go('/');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -55,64 +54,88 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Welcome'),
-      ),
+      backgroundColor: Colors.blueGrey[50],
       body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Text(
-                'Log In or Sign Up',
-                style: TextStyle(fontSize: 24.0),
-              ),
-              const SizedBox(height: 20.0),
-              TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Email',
-                ),
-              ),
-              const SizedBox(height: 10.0),
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Password',
-                ),
-              ),
-              const SizedBox(height: 20.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 64.0),
+          child: Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
+            elevation: 5.0,
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextButton(
-                    onPressed: () {
-                      // Handle forgot password functionality
-                    },
-                    child: const Text('Forgot Password?'),
+                  const Text(
+                    'Welcome',
+                    style: TextStyle(
+                      fontSize: 24.0,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                  ElevatedButton(
-                    onPressed: _login,
-                    child: const Text('Log In'),
+                  const SizedBox(height: 20.0),
+                  const Text(
+                    'Log In or Sign Up',
+                    style: TextStyle(fontSize: 20.0, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 20.0),
+                  TextField(
+                    controller: _emailController,
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(Icons.email),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0)),
+                      hintText: 'Email',
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                    ),
+                  ),
+                  const SizedBox(height: 10.0),
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      prefixIcon: Icon(Icons.lock),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.0)),
+                      hintText: 'Password',
+                      filled: true,
+                      fillColor: Colors.grey[200],
+                    ),
+                  ),
+                  const SizedBox(height: 20.0),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                        },
+                        child: const Text('Forgot Password?'),
+                      ),
+                      ElevatedButton(
+                        onPressed: _login,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                        ),
+                        child: const Text('Log In'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20.0),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('No Account?'),
+                      TextButton(
+                        onPressed: () => context.go('/register'),
+                        child: const Text('Sign Up'),
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 20.0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('No Account?'),
-                  TextButton(
-                    onPressed: () => context.go('/register'),
-                    child: const Text('Sign Up'),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),
